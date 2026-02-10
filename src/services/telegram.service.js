@@ -4,7 +4,7 @@
 const axios = require('axios');
 const config = require('../config/env');
 const logger = require('../utils/logger');
-const { convertToTargetTimezone, formatDateTime } = require('./timezone.service');
+const { formatDateTime } = require('./timezone.service');
 
 const TELEGRAM_API_BASE = 'https://api.telegram.org/bot';
 
@@ -42,11 +42,10 @@ async function sendNewsAlert(events, dateLabel) {
     message += `━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     events.forEach((event, index) => {
-        const convertedDate = convertToTargetTimezone(event.date);
-        const timeStr = formatDateTime(convertedDate);
+        const timeStr = formatDateTime(event.date);
 
         message += `${index + 1}. <b>${event.title}</b>\n`;
-        message += `   🕐 Time: ${timeStr} (UTC+${config.timezone.offset})\n`;
+        message += `   🕐 Time: ${timeStr} (UTC+7)\n`;
         message += `   🔴 Impact: ${event.impact}\n`;
         message += `   🌍 Country: ${event.country}\n`;
 

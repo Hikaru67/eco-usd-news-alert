@@ -8,7 +8,7 @@
 const cron = require('node-cron');
 const logger = require('../utils/logger');
 const { sendNewsAlert } = require('../services/telegram.service');
-const { convertToTargetTimezone, formatDateTime, getDateKey } = require('../services/timezone.service');
+const { formatDateTime, getDateKey } = require('../services/timezone.service');
 
 // Store references to scheduled daily alert tasks so they can be cancelled
 const scheduledAlerts = [];
@@ -34,8 +34,7 @@ function scheduleDailyAlert(dateKey, events) {
     );
     logger.info(`  → ${events.length} events to alert:`);
     events.forEach((e) => {
-        const converted = convertToTargetTimezone(e.date);
-        logger.info(`    - ${e.title} at ${formatDateTime(converted)}`);
+        logger.info(`    - ${e.title} at ${formatDateTime(e.date)}`);
     });
 
     const task = cron.schedule(

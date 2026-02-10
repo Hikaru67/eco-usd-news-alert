@@ -12,11 +12,7 @@ const cron = require('node-cron');
 const logger = require('../utils/logger');
 const { fetchCalendar } = require('../services/fetchCalendar.service');
 const { filterHighImpactUSD } = require('../services/filterNews.service');
-const {
-    convertToTargetTimezone,
-    getDateKey,
-    formatDateTime,
-} = require('../services/timezone.service');
+const { getDateKey } = require('../services/timezone.service');
 const {
     scheduleDailyAlert,
     cancelAllAlerts,
@@ -42,12 +38,11 @@ async function fetchAndScheduleAlerts() {
             return;
         }
 
-        // Step 3: Convert to target timezone and group by date
+        // Step 3: Group events by date (UTC+7)
         const eventsByDate = {};
 
         highImpactUSD.forEach((event) => {
-            const convertedDate = convertToTargetTimezone(event.date);
-            const dateKey = getDateKey(convertedDate);
+            const dateKey = getDateKey(event.date);
 
             if (!eventsByDate[dateKey]) {
                 eventsByDate[dateKey] = [];
