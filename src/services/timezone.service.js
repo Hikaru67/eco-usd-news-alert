@@ -50,5 +50,59 @@ function getDateKey(dateStr) {
     return formatter.format(date);
 }
 
-module.exports = { formatDateTime, getDateKey };
+/**
+ * Get cron components (hour, minute, day, month) from an ISO date string in UTC+7
+ * Used to create dynamic cron expressions for scheduling alerts
+ * @param {string} dateStr - ISO 8601 date string
+ * @returns {object} { hour, minute, day, month } in UTC+7 timezone
+ */
+function getCronComponents(dateStr) {
+    const date = new Date(dateStr);
+
+    // Extract each component in UTC+7 timezone
+    const hourFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: TARGET_TIMEZONE,
+        hour: 'numeric',
+        hour12: false,
+    });
+
+    const minuteFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: TARGET_TIMEZONE,
+        minute: 'numeric',
+    });
+
+    const dayFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: TARGET_TIMEZONE,
+        day: 'numeric',
+    });
+
+    const monthFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: TARGET_TIMEZONE,
+        month: 'numeric',
+    });
+
+    return {
+        hour: parseInt(hourFormatter.format(date)),
+        minute: parseInt(minuteFormatter.format(date)),
+        day: parseInt(dayFormatter.format(date)),
+        month: parseInt(monthFormatter.format(date)),
+    };
+}
+
+/**
+ * Calculate the alert time (5 minutes before the event) and return cron components
+ * @param {string} dateStr - ISO 8601 date string of the event
+ * @returns {object} { hour, minute, day, month } for the alert time (5 min before event)
+ */
+function getEventAlertTime(dateStr) {
+    const eventDate = new Date(dateStr);
+    
+    // Subtract 5 minutes (5 * 60 * 1000 milliseconds)
+    const alertDate = new Date(eventDate.getTime() - 5 * 60 * 1000);
+    
+    // Convert to ISO string and get cron components
+    return getCronComponents(alertDate.toISOString());
+}
+
+module.exports = { formatDateTime, getDateKey, getCronComponents, getEventAlertTime };
 

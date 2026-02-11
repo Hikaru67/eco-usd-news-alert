@@ -15,6 +15,7 @@ const { filterHighImpactUSD } = require('../services/filterNews.service');
 const { getDateKey } = require('../services/timezone.service');
 const {
     scheduleDailyAlert,
+    schedulePreEventAlert,
     cancelAllAlerts,
 } = require('./dailyAlert.cron.js');
 
@@ -57,7 +58,13 @@ async function fetchAndScheduleAlerts() {
         logger.info(`Scheduling alerts for ${dates.length} date(s): ${dates.join(', ')}`);
 
         dates.forEach((dateKey) => {
+            // Schedule daily summary alert at 10:00 AM
             scheduleDailyAlert(dateKey, eventsByDate[dateKey]);
+
+            // Schedule individual pre-event alerts (5 min before each event)
+            eventsByDate[dateKey].forEach((event) => {
+                schedulePreEventAlert(event);
+            });
         });
 
         logger.info('========================================');

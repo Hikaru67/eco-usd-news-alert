@@ -7,8 +7,8 @@
  */
 const cron = require('node-cron');
 const logger = require('../utils/logger');
-const { sendNewsAlert } = require('../services/telegram.service');
-const { formatDateTime, getDateKey } = require('../services/timezone.service');
+const { sendNewsAlert, sendSingleEventAlert } = require('../services/telegram.service');
+const { formatDateTime, getDateKey, getEventAlertTime } = require('../services/timezone.service');
 
 // Store references to scheduled daily alert tasks so they can be cancelled
 const scheduledAlerts = [];
@@ -72,4 +72,43 @@ function cancelAllAlerts() {
     scheduledAlerts.length = 0; // Clear the array
 }
 
-module.exports = { scheduleDailyAlert, cancelAllAlerts };
+/**
+ * Schedule a pre-event alert (5 minutes before the event)
+ * Sends alert for a single event at event_time - 5 minutes
+ *
+ * @param {object} event - Single event object with date, title, etc.
+ */
+function schedulePreEventAlert(event) {
+    // Get alert time (5 minutes before event)
+    const { hour, minute, day, month } = getEventAlertTime(event.date);
+
+    // Create cron expression: second minute hour dayOfMonth month dayOfWeek
+    const cronExpression = `0 ${minute} ${hour} ${day} ${month} *`;
+
+    const eventTimeStr = formatDateTime(event.date);
+    logger.info(
+        `Scheduling pre-event alert for "${event.title}" at ${hour}:${minute
+            .toString()
+            .padStart(2, '0')} (5 min before ${eventTimeStr}) | Cron: ${cronExpression}`
+    );
+
+    const task = cron.schedule(
+        cronExpression,
+        async () => {
+            try {
+                logger.info(`⏰ Pre-event alert triggered for: ${event.title}`);
+                await sendSingleEventAlert(event);
+                logger.info(`✅ Pre-event alert sent successfully for: ${event.title}`);
+            } catch (error) {
+                logger.error(`Failed to send pre-event alert for ${event.title}:`, error.message);
+            }
+        },
+        {
+            timezone: 'Asia/Ho_Chi_Minh', // UTC+7
+        }
+    );
+
+    scheduledAlerts.push(task);
+}
+
+module.exports = { scheduleDailyAlert, schedulePreEventAlert, cancelAllAlerts };

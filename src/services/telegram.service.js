@@ -66,4 +66,33 @@ async function sendNewsAlert(events, dateLabel) {
     await sendMessage(message);
 }
 
-module.exports = { sendMessage, sendNewsAlert };
+/**
+ * Build and send an alert for a single event (5 minutes before it happens)
+ * @param {object} event - Single event object
+ */
+async function sendSingleEventAlert(event) {
+    const timeStr = formatDateTime(event.date);
+
+    let message = `⏰ <b>Tin sắp ra trong 5 phút!</b>\n`;
+    message += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    message += `<b>${event.title}</b>\n`;
+    message += `🕐 Time: ${timeStr} (UTC+7)\n`;
+    message += `🔴 Impact: ${event.impact}\n`;
+    message += `🌍 Country: ${event.country}\n`;
+
+    // Include forecast & previous if available
+    if (event.forecast) {
+        message += `📈 Forecast: ${event.forecast}\n`;
+    }
+    if (event.previous) {
+        message += `📉 Previous: ${event.previous}\n`;
+    }
+
+    message += `\n━━━━━━━━━━━━━━━━━━━━\n`;
+    message += `⚠️ <i>Prepare for potential market volatility.</i>`;
+
+    await sendMessage(message);
+}
+
+module.exports = { sendMessage, sendNewsAlert, sendSingleEventAlert };
