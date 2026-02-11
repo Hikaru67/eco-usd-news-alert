@@ -44,10 +44,7 @@ async function sendNewsAlert(events, dateLabel) {
     events.forEach((event, index) => {
         const timeStr = formatDateTime(event.date);
 
-        message += `${index + 1}. <b>${event.title}</b>\n`;
-        message += `   🕐 Time: ${timeStr} (UTC+7)\n`;
-        message += `   🔴 Impact: ${event.impact}\n`;
-        message += `   🌍 Country: ${event.country}\n`;
+        message += `${timeStr} 🔴 <b>${event.title}</b>\n`;
 
         // Include forecast & previous if available
         if (event.forecast) {
@@ -76,10 +73,7 @@ async function sendSingleEventAlert(event) {
     let message = `⏰ <b>Tin sắp ra trong 5 phút!</b>\n`;
     message += `━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    message += `<b>${event.title}</b>\n`;
-    message += `🕐 Time: ${timeStr} (UTC+7)\n`;
-    message += `🔴 Impact: ${event.impact}\n`;
-    message += `🌍 Country: ${event.country}\n`;
+    message += `${timeStr} 🔴 <b>${event.title}</b>\n`;
 
     // Include forecast & previous if available
     if (event.forecast) {
