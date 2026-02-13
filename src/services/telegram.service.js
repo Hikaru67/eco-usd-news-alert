@@ -11,17 +11,24 @@ const TELEGRAM_API_BASE = 'https://api.telegram.org/bot';
 /**
  * Send a text message to the configured Telegram channel
  * @param {string} text - Message text (supports HTML parse mode)
+ * @param {string} [topicId] - Optional: Topic ID (message_thread_id) to send to
  * @returns {Promise<object>} Telegram API response
  */
-async function sendMessage(text) {
+async function sendMessage(text, topicId = null) {
     const url = `${TELEGRAM_API_BASE}${config.telegram.botToken}/sendMessage`;
 
     try {
-        const response = await axios.post(url, {
-            chat_id: config.telegram.channelId,
+        const payload = {
+            chat_id: config.telegram.groupId,
             text,
             parse_mode: 'HTML',
-        });
+        };
+
+        if (topicId) {
+            payload.message_thread_id = topicId;
+        }
+
+        const response = await axios.post(url, payload);
 
         logger.info('Telegram message sent successfully');
         return response.data;
@@ -60,7 +67,7 @@ async function sendNewsAlert(events, dateLabel) {
     message += `━━━━━━━━━━━━━━━━━━━━\n`;
     message += `⚠️ <i>High-impact news may cause significant market volatility.</i>`;
 
-    await sendMessage(message);
+    await sendMessage(message, config.telegram.newsTopicId);
 }
 
 /**
@@ -86,7 +93,7 @@ async function sendSingleEventAlert(event) {
     message += `\n━━━━━━━━━━━━━━━━━━━━\n`;
     message += `⚠️ <i>Prepare for potential market volatility.</i>`;
 
-    await sendMessage(message);
+    await sendMessage(message, config.telegram.newsTopicId);
 }
 
 module.exports = { sendMessage, sendNewsAlert, sendSingleEventAlert };

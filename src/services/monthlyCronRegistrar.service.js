@@ -66,7 +66,7 @@ function registerMonthlySchedule(scheduleDates) {
             const task = cron.schedule(cronExpression, async () => {
                 try {
                     const message = buildAlertMessage(date, name, level);
-                    await sendMessage(message);
+                    await sendMessage(message, config.telegram.btcTopicId);
                     logger.info(`Alert sent for ${formatDateTime(date.toISOString())} (Triggered at ${formatDateTime(alertTime.toISOString())})`);
                 } catch (err) {
                     logger.error(`Failed to send alert for ${date.toISOString()}: ${err.message}`);

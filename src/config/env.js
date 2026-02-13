@@ -7,7 +7,9 @@ require('dotenv').config();
 const config = {
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN,
-    channelId: process.env.TELEGRAM_CHANNEL_ID,
+    groupId: process.env.TELEGRAM_GROUP_ID || process.env.TELEGRAM_CHANNEL_ID,
+    newsTopicId: process.env.TELEGRAM_NEWS_TOPIC_ID,
+    btcTopicId: process.env.TELEGRAM_BTC_TOPIC_ID,
   },
   api: {
     calendarUrl: process.env.FAIR_ECONOMY_CALENDAR_URL,
@@ -27,7 +29,8 @@ const config = {
 // Validate required environment variables
 const requiredVars = [
   { key: 'TELEGRAM_BOT_TOKEN', value: config.telegram.botToken },
-  { key: 'TELEGRAM_CHANNEL_ID', value: config.telegram.channelId },
+  // Require either Group ID or Channel ID associated with 'groupId' key
+  { key: 'TELEGRAM_GROUP_ID (or CHANNEL_ID)', value: config.telegram.groupId },
   { key: 'FAIR_ECONOMY_CALENDAR_URL', value: config.api.calendarUrl },
   { key: 'SCHEDULER_START_TIME', value: config.scheduler.startTime },
 ];
