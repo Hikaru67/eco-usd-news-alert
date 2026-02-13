@@ -16,6 +16,12 @@ const config = {
     // Offset from UTC in hours (e.g., 7 for UTC+7)
     offset: parseInt(process.env.TIMEZONE_OFFSET, 10) || 7,
   },
+  scheduler: {
+    startTime: process.env.SCHEDULER_START_TIME || '2026-02-09T17:00:00',
+    timezone: process.env.SCHEDULER_TIMEZONE || 'Asia/Ho_Chi_Minh',
+    name: process.env.SCHEDULER_NAME || 'BTC biến động',
+    level: process.env.SCHEDULER_LEVEL || '🟠 Trung bình',
+  },
 };
 
 // Validate required environment variables
@@ -23,6 +29,7 @@ const requiredVars = [
   { key: 'TELEGRAM_BOT_TOKEN', value: config.telegram.botToken },
   { key: 'TELEGRAM_CHANNEL_ID', value: config.telegram.channelId },
   { key: 'FAIR_ECONOMY_CALENDAR_URL', value: config.api.calendarUrl },
+  { key: 'SCHEDULER_START_TIME', value: config.scheduler.startTime },
 ];
 
 for (const { key, value } of requiredVars) {
