@@ -15,7 +15,7 @@ const scheduledAlerts = [];
 
 /**
  * Schedule a daily alert for a specific date
- * Sends alert at 10:00 AM (UTC+7) on the given date
+ * Sends alert at 07:00 AM (UTC+7) on the given date
  *
  * @param {string} dateKey - Date string in YYYY-MM-DD format (UTC+7)
  * @param {Array} events - Filtered events for that date
@@ -24,13 +24,13 @@ function scheduleDailyAlert(dateKey, events) {
     // Parse the date key to extract day, month
     const [year, month, day] = dateKey.split('-').map(Number);
 
-    // Schedule at 10:00 AM on the target date
+    // Schedule at 07:00 AM on the target date
     // node-cron format: second minute hour dayOfMonth month dayOfWeek
     // Note: node-cron months are 1-12, matching our format
-    const cronExpression = `0 0 10 ${day} ${month} *`;
+    const cronExpression = `0 0 7 ${day} ${month} *`;
 
     logger.info(
-        `Scheduling alert for ${dateKey} at 10:00 AM (UTC+7) | Cron: ${cronExpression}`
+        `Scheduling alert for ${dateKey} at 07:00 AM (UTC+7) | Cron: ${cronExpression}`
     );
     logger.info(`  → ${events.length} events to alert:`);
     events.forEach((e) => {
