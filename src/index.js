@@ -17,6 +17,7 @@
  */
 const logger = require('./utils/logger');
 const { startWeeklyCron, fetchAndScheduleAlerts } = require('./cron/weeklyFetch.cron');
+const { startMonthlyCron, runMonthlyScheduler } = require('./cron/monthlyScheduler.cron');
 
 async function main() {
     logger.info('🚀 News Alert System starting...');
@@ -26,9 +27,16 @@ async function main() {
     // Start the weekly cron (every Monday 05:00 UTC+7)
     startWeeklyCron();
 
+    // Start the monthly scheduler (1st of month)
+    startMonthlyCron();
+
     // Also run immediately on startup to catch this week's events
     logger.info('Running initial fetch & schedule...');
     await fetchAndScheduleAlerts();
+
+    // Run monthly scheduler immediately to register this month's custom alerts
+    logger.info('Initializing custom alert schedule...');
+    runMonthlyScheduler();
 
     logger.info('✅ News Alert System is running. Press Ctrl+C to stop.');
 }
