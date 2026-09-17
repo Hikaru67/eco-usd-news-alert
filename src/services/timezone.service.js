@@ -51,6 +51,20 @@ function getDateKey(dateStr) {
 }
 
 /**
+ * Get the date whose 06:00 alert should include this event.
+ * Events from 00:00 through 05:59 belong to the previous day's alert.
+ *
+ * @param {string} dateStr - ISO 8601 date string
+ * @returns {string} Alert date in YYYY-MM-DD format (UTC+7)
+ */
+function getAlertDateKey(dateStr) {
+    const eventDate = new Date(dateStr);
+    const shiftedDate = new Date(eventDate.getTime() - 6 * 60 * 60 * 1000);
+
+    return getDateKey(shiftedDate.toISOString());
+}
+
+/**
  * Get cron components (hour, minute, day, month) from an ISO date string in UTC+7
  * Used to create dynamic cron expressions for scheduling alerts
  * @param {string} dateStr - ISO 8601 date string
@@ -104,5 +118,10 @@ function getEventAlertTime(dateStr) {
     return getCronComponents(alertDate.toISOString());
 }
 
-module.exports = { formatDateTime, getDateKey, getCronComponents, getEventAlertTime };
-
+module.exports = {
+    formatDateTime,
+    getDateKey,
+    getAlertDateKey,
+    getCronComponents,
+    getEventAlertTime,
+};

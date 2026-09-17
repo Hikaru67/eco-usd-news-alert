@@ -9,11 +9,11 @@
  *   → Fetch JSON from Fair Economy API
  *   → Filter: impact === "High" && country === "USD"
  *   → Convert times from UTC-5 to UTC+7 (+12 hours)
- *   → Group events by date (UTC+7)
- *   → Schedule a daily alert cron for each date at 07:00 AM (UTC+7)
+ *   → Group events into windows from 06:00 through 05:59 the next day (UTC+7)
+ *   → Schedule a summary alert at 06:00 for each window
  *
- * Daily Alert Cron (07:00 UTC+7 on news days):
- *   → Send formatted Telegram message with the day's High-impact USD events
+ * Daily Alert Cron (06:00 UTC+7 on news days):
+ *   → Send High-impact USD events through 05:59 the following morning
  */
 const logger = require('./utils/logger');
 const { startWeeklyCron, fetchAndScheduleAlerts } = require('./cron/weeklyFetch.cron');
