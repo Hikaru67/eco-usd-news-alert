@@ -77,7 +77,7 @@ function getCronComponents(dateStr) {
     const hourFormatter = new Intl.DateTimeFormat('en-US', {
         timeZone: TARGET_TIMEZONE,
         hour: 'numeric',
-        hour12: false,
+        hourCycle: 'h23',
     });
 
     const minuteFormatter = new Intl.DateTimeFormat('en-US', {
@@ -118,10 +118,23 @@ function getEventAlertTime(dateStr) {
     return getCronComponents(alertDate.toISOString());
 }
 
+/**
+ * Calculate the result check time (1 minute after the event).
+ * @param {string} dateStr - ISO 8601 date string of the event
+ * @returns {object} { hour, minute, day, month } for the result check
+ */
+function getEventResultTime(dateStr) {
+    const eventDate = new Date(dateStr);
+    const resultDate = new Date(eventDate.getTime() + 60 * 1000);
+
+    return getCronComponents(resultDate.toISOString());
+}
+
 module.exports = {
     formatDateTime,
     getDateKey,
     getAlertDateKey,
     getCronComponents,
     getEventAlertTime,
+    getEventResultTime,
 };

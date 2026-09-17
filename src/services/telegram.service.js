@@ -8,6 +8,13 @@ const { formatDateTime } = require('./timezone.service');
 
 const TELEGRAM_API_BASE = 'https://api.telegram.org/bot';
 
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+}
+
 /**
  * Send a text message to the configured Telegram channel
  * @param {string} text - Message text (supports HTML parse mode)
@@ -96,4 +103,31 @@ async function sendSingleEventAlert(event) {
     await sendMessage(message, config.telegram.newsTopicId);
 }
 
-module.exports = { sendMessage, sendNewsAlert, sendSingleEventAlert };
+/**
+ * Send the published result for an economic event.
+ * @param {object} event - Refreshed event containing the actual result
+ */
+async function sendEventResultAlert(event) {
+    const timeStr = formatDateTime(event.date);
+
+    let message = `✅ <b>Kết quả tin kinh tế</b>\n`;
+    message += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+    message += `${timeStr} 🔴 <b>${escapeHtml(event.title)}</b>\n`;
+    message += `🎯 Actual: <b>${escapeHtml(event.actual)}</b>\n`;
+
+    if (event.forecast) {
+        message += `📈 Forecast: ${escapeHtml(event.forecast)}\n`;
+    }
+    if (event.previous) {
+        message += `📉 Previous: ${escapeHtml(event.previous)}\n`;
+    }
+
+    await sendMessage(message, config.telegram.newsTopicId);
+}
+
+module.exports = {
+    sendMessage,
+    sendNewsAlert,
+    sendSingleEventAlert,
+    sendEventResultAlert,
+};

@@ -7,8 +7,20 @@
  */
 const cron = require('node-cron');
 const logger = require('../utils/logger');
-const { sendNewsAlert, sendSingleEventAlert } = require('../services/telegram.service');
-const { formatDateTime, getEventAlertTime } = require('../services/timezone.service');
+const { fetchCalendar } = require('../services/fetchCalendar.service');
+const {
+    sendNewsAlert,
+    sendSingleEventAlert,
+    sendEventResultAlert,
+} = require('../services/telegram.service');
+const {
+    formatDateTime,
+    getEventAlertTime,
+    getEventResultTime,
+} = require('../services/timezone.service');
+
+const RESULT_RETRY_ATTEMPTS = 5;
+const RESULT_RETRY_DELAY_MS = 60 * 1000;
 
 // Store references to scheduled daily alert tasks so they can be cancelled
 const scheduledAlerts = [];
@@ -117,4 +129,88 @@ function schedulePreEventAlert(event) {
     scheduledAlerts.push(task);
 }
 
-module.exports = { scheduleDailyAlert, schedulePreEventAlert, cancelAllAlerts };
+function hasActualResult(event) {
+    return (
+        event &&
+        event.actual !== undefined &&
+        event.actual !== null &&
+        String(event.actual).trim() !== ''
+    );
+}
+
+function findMatchingEvent(events, targetEvent) {
+    const targetTime = new Date(targetEvent.date).getTime();
+
+    return events.find((event) => {
+        return (
+            event.title === targetEvent.title &&
+            event.country === targetEvent.country &&
+            new Date(event.date).getTime() === targetTime
+        );
+    });
+}
+
+function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Schedule a calendar refresh 1 minute after an event and send its actual result.
+ * If the data source is late, retry once per minute for up to 5 attempts.
+ *
+ * @param {object} event - Original event used to locate the refreshed result
+ */
+function schedulePostEventResult(event) {
+    const { hour, minute, day, month } = getEventResultTime(event.date);
+    const cronExpression = `0 ${minute} ${hour} ${day} ${month} *`;
+
+    logger.info(
+        `Scheduling result refresh for "${event.title}" at ${hour}:${minute
+            .toString()
+            .padStart(2, '0')} (1 min after ${formatDateTime(event.date)}) | Cron: ${cronExpression}`
+    );
+
+    const task = cron.schedule(
+        cronExpression,
+        async () => {
+            for (let attempt = 1; attempt <= RESULT_RETRY_ATTEMPTS; attempt += 1) {
+                try {
+                    logger.info(
+                        `Refreshing result for "${event.title}" (attempt ${attempt}/${RESULT_RETRY_ATTEMPTS})`
+                    );
+
+                    const refreshedEvents = await fetchCalendar();
+                    const refreshedEvent = findMatchingEvent(refreshedEvents, event);
+
+                    if (hasActualResult(refreshedEvent)) {
+                        await sendEventResultAlert(refreshedEvent);
+                        logger.info(`✅ Result sent successfully for: ${event.title}`);
+                        return;
+                    }
+
+                    logger.warn(`Actual result is not available yet for: ${event.title}`);
+                } catch (error) {
+                    logger.error(`Failed to refresh result for ${event.title}:`, error.message);
+                }
+
+                if (attempt < RESULT_RETRY_ATTEMPTS) {
+                    await wait(RESULT_RETRY_DELAY_MS);
+                }
+            }
+
+            logger.error(`No actual result found after retries for: ${event.title}`);
+        },
+        {
+            timezone: 'Asia/Ho_Chi_Minh', // UTC+7
+        }
+    );
+
+    scheduledAlerts.push(task);
+}
+
+module.exports = {
+    scheduleDailyAlert,
+    schedulePreEventAlert,
+    schedulePostEventResult,
+    cancelAllAlerts,
+};

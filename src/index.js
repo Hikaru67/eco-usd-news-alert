@@ -14,6 +14,7 @@
  *
  * Daily Alert Cron (06:00 UTC+7 on news days):
  *   → Send High-impact USD events through 05:59 the following morning
+ *   → Refresh each event 1 minute after release and send its actual result
  */
 const logger = require('./utils/logger');
 const { startWeeklyCron, fetchAndScheduleAlerts } = require('./cron/weeklyFetch.cron');

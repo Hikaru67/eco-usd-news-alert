@@ -16,6 +16,7 @@ const { getAlertDateKey } = require('../services/timezone.service');
 const {
     scheduleDailyAlert,
     schedulePreEventAlert,
+    schedulePostEventResult,
     cancelAllAlerts,
 } = require('./dailyAlert.cron.js');
 
@@ -61,9 +62,10 @@ async function fetchAndScheduleAlerts() {
             // Schedule the summary at the beginning of its 06:00-to-05:59 window
             scheduleDailyAlert(dateKey, eventsByDate[dateKey]);
 
-            // Schedule individual pre-event alerts (5 min before each event)
+            // Schedule alerts before each event and refreshed results after release
             eventsByDate[dateKey].forEach((event) => {
                 schedulePreEventAlert(event);
+                schedulePostEventResult(event);
             });
         });
 
