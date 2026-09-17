@@ -8,14 +8,14 @@
 const cron = require('node-cron');
 const logger = require('../utils/logger');
 const { sendNewsAlert, sendSingleEventAlert } = require('../services/telegram.service');
-const { formatDateTime, getDateKey, getEventAlertTime } = require('../services/timezone.service');
+const { formatDateTime, getEventAlertTime } = require('../services/timezone.service');
 
 // Store references to scheduled daily alert tasks so they can be cancelled
 const scheduledAlerts = [];
 
 /**
  * Schedule a daily alert for a specific date
- * Sends alert at 10:00 AM (UTC+7) on the given date
+ * Sends alert at 06:00 (UTC+7) on the given date
  *
  * @param {string} dateKey - Date string in YYYY-MM-DD format (UTC+7)
  * @param {Array} events - Filtered events for that date
@@ -24,13 +24,13 @@ function scheduleDailyAlert(dateKey, events) {
     // Parse the date key to extract day, month
     const [year, month, day] = dateKey.split('-').map(Number);
 
-    // Schedule at 10:00 AM on the target date
+    // Schedule at 06:00 on the target date
     // node-cron format: second minute hour dayOfMonth month dayOfWeek
     // Note: node-cron months are 1-12, matching our format
-    const cronExpression = `0 0 10 ${day} ${month} *`;
+    const cronExpression = `0 0 6 ${day} ${month} *`;
 
     logger.info(
-        `Scheduling alert for ${dateKey} at 10:00 AM (UTC+7) | Cron: ${cronExpression}`
+        `Scheduling alert for ${dateKey} at 06:00 (UTC+7) | Cron: ${cronExpression}`
     );
     logger.info(`  → ${events.length} events to alert:`);
     events.forEach((e) => {
@@ -43,10 +43,16 @@ function scheduleDailyAlert(dateKey, events) {
             try {
                 logger.info(`🔔 Daily alert triggered for ${dateKey}`);
 
-                // Format date label for the message
+                // The alert covers 06:00 today through 05:59 tomorrow.
+                const nextDate = new Date(Date.UTC(year, month - 1, day + 1));
                 const dateLabel = `${day.toString().padStart(2, '0')}/${month
                     .toString()
-                    .padStart(2, '0')}/${year}`;
+                    .padStart(2, '0')}/${year} 06:00 → ${nextDate
+                    .getUTCDate()
+                    .toString()
+                    .padStart(2, '0')}/${(nextDate.getUTCMonth() + 1)
+                    .toString()
+                    .padStart(2, '0')}/${nextDate.getUTCFullYear()} 05:59`;
 
                 await sendNewsAlert(events, dateLabel);
                 logger.info(`✅ Alert sent successfully for ${dateKey}`);
