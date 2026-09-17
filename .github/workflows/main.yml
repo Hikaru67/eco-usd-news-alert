@@ -29,7 +29,7 @@ jobs:
           envs: TARGET_APP 
           script: |
             # 1. DI CHUYỂN VÀO THƯ MỤC CHỨA CODE TRÊN VPS CỦA BẠN (Sửa lại đường dẫn này)
-            cd /root/pumping-token-detect || exit 1
+            cd /root/eco-usd-news-alert || exit 1
 
             # 2. NẠP NODE.JS VÀ PM2 VÀO MÔI TRƯỜNG (Cực kỳ quan trọng)
             export PATH="/root/.nvm/versions/node/v23.11.1/bin:$PATH"
@@ -39,7 +39,7 @@ jobs:
             npm install
 
             # 4. CHẠY LOGIC PM2
-            TARGET_APPS="${TARGET_APP:-signal_token}"
+            TARGET_APPS="${TARGET_APP}"
 
             for app in $TARGET_APPS; do
               # Tránh lỗi output từ npm/nvm làm sai lệch kết quả kiểm tra của PM2 bằng cách lấy đường dẫn tuyệt đối của pm2 nếu cần (thường pm2 describe vẫn chạy tốt)
