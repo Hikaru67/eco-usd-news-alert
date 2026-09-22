@@ -12,7 +12,8 @@ const cron = require('node-cron');
 const logger = require('../utils/logger');
 const { fetchCalendar } = require('../services/fetchCalendar.service');
 const { filterHighImpactUSD } = require('../services/filterNews.service');
-const { getAlertDateKey } = require('../services/timezone.service');
+const { getAlertDateKey, getDateKey, getWeekRange } = require('../services/timezone.service');
+const { sendWeeklyNewsSummary } = require('../services/telegram.service');
 const {
     scheduleDailyAlert,
     schedulePreEventAlert,
@@ -23,7 +24,7 @@ const {
 /**
  * Main logic: fetch, filter, group by date, and schedule alerts
  */
-async function fetchAndScheduleAlerts() {
+async function fetchAndScheduleAlerts({ sendWeeklySummary = false } = {}) {
     try {
         logger.info('========================================');
         logger.info('Weekly fetch & schedule started');
@@ -37,6 +38,11 @@ async function fetchAndScheduleAlerts() {
 
         if (highImpactUSD.length === 0) {
             logger.info('No High-impact USD events this week. No alerts scheduled.');
+
+            if (sendWeeklySummary) {
+                await sendWeeklySummaryMessage([]);
+            }
+
             return;
         }
 
@@ -72,8 +78,28 @@ async function fetchAndScheduleAlerts() {
         logger.info('========================================');
         logger.info('Weekly fetch & schedule completed');
         logger.info('========================================');
+
+        if (sendWeeklySummary) {
+            await sendWeeklySummaryMessage(highImpactUSD);
+        }
     } catch (error) {
         logger.error('Weekly fetch & schedule failed:', error.message);
+    }
+}
+
+async function sendWeeklySummaryMessage(events) {
+    const { start, end } = getWeekRange();
+    const eventsThisWeek = events.filter((event) => {
+        const dateKey = getDateKey(event.date);
+        return dateKey >= start && dateKey <= end;
+    });
+
+    try {
+        await sendWeeklyNewsSummary(eventsThisWeek, start, end);
+        logger.info(`Weekly summary sent for ${start} → ${end}`);
+    } catch (error) {
+        // Notification failure must not prevent daily alerts from being scheduled.
+        logger.error('Failed to send weekly summary:', error.message);
     }
 }
 
@@ -88,7 +114,7 @@ function startWeeklyCron() {
 
     logger.info(`Weekly fetch cron scheduled: ${cronExpression} (every Monday 05:00 UTC+7)`);
 
-    cron.schedule(cronExpression, fetchAndScheduleAlerts, {
+    cron.schedule(cronExpression, () => fetchAndScheduleAlerts({ sendWeeklySummary: true }), {
         timezone: 'Asia/Ho_Chi_Minh', // UTC+7
     });
 }
