@@ -4,7 +4,7 @@
 const axios = require('axios');
 const config = require('../config/env');
 const logger = require('../utils/logger');
-const { formatDateTime } = require('./timezone.service');
+const { formatDateTime, getDateKey } = require('./timezone.service');
 
 const TELEGRAM_API_BASE = 'https://api.telegram.org/bot';
 
@@ -13,6 +13,18 @@ function escapeHtml(value) {
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;');
+}
+
+function formatWeekdayDate(dateKey) {
+    const date = new Date(`${dateKey}T00:00:00Z`);
+
+    return new Intl.DateTimeFormat('vi-VN', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        weekday: 'long',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    }).format(date);
 }
 
 /**
@@ -78,6 +90,62 @@ async function sendNewsAlert(events, dateLabel) {
 }
 
 /**
+ * Build and send one weekly summary of High-impact USD events.
+ * Sends a useful empty-state message when there are no matching events.
+ *
+ * @param {Array} events - Filtered High-impact USD events
+ * @param {string} weekStart - Monday in YYYY-MM-DD format (UTC+7)
+ * @param {string} weekEnd - Sunday in YYYY-MM-DD format (UTC+7)
+ */
+async function sendWeeklyNewsSummary(events, weekStart, weekEnd) {
+    const weekStartLabel = formatWeekdayDate(weekStart).replace(/^.*?,\s*/, '');
+    const weekEndLabel = formatWeekdayDate(weekEnd).replace(/^.*?,\s*/, '');
+
+    let message = `📅 <b>LỊCH TIN QUAN TRỌNG TUẦN</b>\n`;
+    message += `<b>${weekStartLabel} → ${weekEndLabel}</b>\n`;
+    message += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    if (events.length === 0) {
+        message += `✅ Tuần này không có tin kinh tế Mỹ quan trọng nào\n`;
+        message += `(High-impact USD).\n\n`;
+        message += `Thị trường có thể ít biến động bởi tin tức kinh tế theo lịch.`;
+        await sendMessage(message, config.telegram.newsTopicId);
+        return;
+    }
+
+    const sortedEvents = [...events].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    let currentDateKey = null;
+
+    sortedEvents.forEach((event) => {
+        const dateKey = getDateKey(event.date);
+
+        if (dateKey !== currentDateKey) {
+            currentDateKey = dateKey;
+            message += `🔴 <b>${escapeHtml(formatWeekdayDate(dateKey))}</b>\n`;
+        }
+
+        const timeStr = formatDateTime(event.date).split(' ')[1];
+        message += `${timeStr}  <b>${escapeHtml(event.title)}</b>\n`;
+
+        if (event.forecast) {
+            message += `   📈 Forecast: ${escapeHtml(event.forecast)}\n`;
+        }
+        if (event.previous) {
+            message += `   📉 Previous: ${escapeHtml(event.previous)}\n`;
+        }
+
+        message += `\n`;
+    });
+
+    message += `━━━━━━━━━━━━━━━━━━━━\n`;
+    message += `⚠️ <i>Các tin High-impact có thể gây biến động mạnh.</i>`;
+
+    await sendMessage(message, config.telegram.newsTopicId);
+}
+
+/**
  * Build and send an alert for a single event (5 minutes before it happens)
  * @param {object} event - Single event object
  */
@@ -128,6 +196,7 @@ async function sendEventResultAlert(event) {
 module.exports = {
     sendMessage,
     sendNewsAlert,
+    sendWeeklyNewsSummary,
     sendSingleEventAlert,
     sendEventResultAlert,
 };

@@ -33,6 +33,8 @@ async function main() {
 
     // Also run immediately on startup to catch this week's events
     logger.info('Running initial fetch & schedule...');
+    // Startup refreshes schedules only. The weekly summary is sent by Monday's cron
+    // so a PM2 restart does not send the same weekly message again.
     await fetchAndScheduleAlerts();
 
     // Run monthly scheduler immediately to register this month's custom alerts

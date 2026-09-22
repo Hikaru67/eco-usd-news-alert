@@ -51,6 +51,30 @@ function getDateKey(dateStr) {
 }
 
 /**
+ * Get the Monday-Sunday range containing a date in the target timezone.
+ * @param {Date} referenceDate - Reference instant
+ * @returns {{ start: string, end: string }} Date keys in YYYY-MM-DD format
+ */
+function getWeekRange(referenceDate = new Date()) {
+    const dateKey = getDateKey(referenceDate.toISOString());
+    const [year, month, day] = dateKey.split('-').map(Number);
+    const localDate = new Date(Date.UTC(year, month - 1, day));
+    const dayOfWeek = localDate.getUTCDay();
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+    const monday = new Date(localDate);
+    monday.setUTCDate(monday.getUTCDate() - daysFromMonday);
+
+    const sunday = new Date(monday);
+    sunday.setUTCDate(sunday.getUTCDate() + 6);
+
+    return {
+        start: monday.toISOString().slice(0, 10),
+        end: sunday.toISOString().slice(0, 10),
+    };
+}
+
+/**
  * Get the date whose 06:00 alert should include this event.
  * Events from 00:00 through 05:59 belong to the previous day's alert.
  *
@@ -133,6 +157,7 @@ function getEventResultTime(dateStr) {
 module.exports = {
     formatDateTime,
     getDateKey,
+    getWeekRange,
     getAlertDateKey,
     getCronComponents,
     getEventAlertTime,
