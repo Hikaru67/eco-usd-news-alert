@@ -40,7 +40,7 @@ function registerMonthlySchedule(scheduleDates) {
 
     logger.info(`Registering ${scheduleDates.length} alert jobs for this month...`);
 
-    const { name, level } = config.scheduler;
+    const { name } = config.scheduler;
 
     scheduleDates.forEach(date => {
         // Calculate alert time: 3 minutes before the target time
@@ -65,7 +65,7 @@ function registerMonthlySchedule(scheduleDates) {
 
             const task = cron.schedule(cronExpression, async () => {
                 try {
-                    const message = buildAlertMessage(date, name, level);
+                    const message = buildAlertMessage(date, name);
                     await sendMessage(message, config.telegram.btcTopicId);
                     logger.info(`Alert sent for ${formatDateTime(date.toISOString())} (Triggered at ${formatDateTime(alertTime.toISOString())})`);
                 } catch (err) {
@@ -113,11 +113,10 @@ function getCronExpressionFromDate(date) {
 /**
  * Build the alert message content
  */
-function buildAlertMessage(date, name, level) {
+function buildAlertMessage(date, name) {
     const timeStr = formatDateTime(date.toISOString());
     return `🔔 <b>${name}</b>\n\n` +
-        `🕒 Thời gian: <b>${timeStr}</b>\n` +
-        `⚠️ Mức độ: ${level}`;
+        `🕒 Thời gian: <b>${timeStr}</b>`;
 }
 
 module.exports = { registerMonthlySchedule, clearScheduledJobs };

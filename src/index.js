@@ -4,6 +4,7 @@
  * Flow:
  * 1. On startup, immediately fetch & schedule alerts (so we don't wait until Monday)
  * 2. Start the weekly cron to repeat every Monday at 05:00 AM (UTC+7)
+ * 3. Send the BTC volatility schedule for the week every Monday at 00:01
  *
  * Weekly Cron (Monday 05:00 UTC+7):
  *   → Fetch JSON from Fair Economy API
@@ -19,6 +20,7 @@
 const logger = require('./utils/logger');
 const { startWeeklyCron, fetchAndScheduleAlerts } = require('./cron/weeklyFetch.cron');
 const { startMonthlyCron, runMonthlyScheduler } = require('./cron/monthlyScheduler.cron');
+const { startWeeklyBtcScheduleCron } = require('./cron/weeklyBtcSchedule.cron');
 
 async function main() {
     logger.info('🚀 News Alert System starting...');
@@ -30,6 +32,9 @@ async function main() {
 
     // Start the monthly scheduler (1st of month)
     startMonthlyCron();
+
+    // Send this week's BTC volatility timestamps every Monday at 00:01
+    startWeeklyBtcScheduleCron();
 
     // Also run immediately on startup to catch this week's events
     logger.info('Running initial fetch & schedule...');

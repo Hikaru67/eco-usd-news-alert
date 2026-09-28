@@ -19,7 +19,8 @@ function formatWeekdayDate(dateKey) {
     const date = new Date(`${dateKey}T00:00:00Z`);
 
     return new Intl.DateTimeFormat('vi-VN', {
-        timeZone: 'Asia/Ho_Chi_Minh',
+        // dateKey is a local calendar date, so keep its weekday and date together.
+        timeZone: 'UTC',
         weekday: 'long',
         day: '2-digit',
         month: '2-digit',
@@ -146,6 +147,68 @@ async function sendWeeklyNewsSummary(events, weekStart, weekEnd) {
 }
 
 /**
+ * Send the scheduled BTC volatility timestamps for the current week.
+ * @param {Array<Date>} schedule - Scheduled timestamps in chronological order
+ * @param {string} weekStart - Monday in YYYY-MM-DD format (UTC+7)
+ * @param {string} weekEnd - Sunday in YYYY-MM-DD format (UTC+7)
+ */
+async function sendWeeklyBtcSchedule(schedule, weekStart, weekEnd) {
+    const timezone = config.scheduler.timezone;
+    const weekStartLabel = formatWeekdayDate(weekStart).replace(/^.*?,\s*/, '');
+    const weekEndLabel = formatWeekdayDate(weekEnd).replace(/^.*?,\s*/, '');
+
+    let message = `📊 <b>LỊCH BIẾN ĐỘNG BTC TRONG TUẦN</b>\n`;
+    message += `<b>${weekStartLabel} → ${weekEndLabel}</b>\n`;
+    message += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    if (schedule.length === 0) {
+        message += `Không có mốc biến động BTC nào được lên lịch trong tuần này.`;
+        await sendMessage(message, config.telegram.btcTopicId);
+        return;
+    }
+
+    const scheduleByDate = new Map();
+    schedule.forEach((date) => {
+        const dateKey = getDateKey(date.toISOString(), timezone);
+        if (!scheduleByDate.has(dateKey)) {
+            scheduleByDate.set(dateKey, []);
+        }
+        scheduleByDate.get(dateKey).push(date);
+    });
+
+    const dayLines = [...scheduleByDate.entries()].map(([dateKey, dates]) => {
+        const sortedDates = dates.sort((a, b) => a - b);
+        const timeRanges = [];
+        let rangeStart = sortedDates[0];
+        let rangeEnd = sortedDates[0];
+
+        const addRange = () => {
+            const startTime = formatDateTime(rangeStart.toISOString(), timezone).split(' ')[1];
+            const endTime = formatDateTime(rangeEnd.toISOString(), timezone).split(' ')[1];
+            timeRanges.push(startTime === endTime ? startTime : `${startTime}–${endTime}`);
+        };
+
+        for (let index = 1; index < sortedDates.length; index += 1) {
+            const date = sortedDates[index];
+            if (date.getTime() - rangeEnd.getTime() === 60 * 60 * 1000) {
+                rangeEnd = date;
+                continue;
+            }
+
+            addRange();
+            rangeStart = date;
+            rangeEnd = date;
+        }
+        addRange();
+
+        return `📍 ${formatWeekdayDate(dateKey)} · <b>${timeRanges.join(', ')}</b>`;
+    });
+
+    message += dayLines.join('\n\n');
+    await sendMessage(message, config.telegram.btcTopicId);
+}
+
+/**
  * Build and send an alert for a single event (5 minutes before it happens)
  * @param {object} event - Single event object
  */
@@ -197,6 +260,7 @@ module.exports = {
     sendMessage,
     sendNewsAlert,
     sendWeeklyNewsSummary,
+    sendWeeklyBtcSchedule,
     sendSingleEventAlert,
     sendEventResultAlert,
 };
