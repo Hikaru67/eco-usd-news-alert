@@ -22,7 +22,6 @@ const config = {
     startTime: process.env.SCHEDULER_START_TIME || '2026-02-09T17:00:00',
     timezone: process.env.SCHEDULER_TIMEZONE || 'Asia/Ho_Chi_Minh',
     name: process.env.SCHEDULER_NAME || 'BTC biến động',
-    level: process.env.SCHEDULER_LEVEL || '🟠 Trung bình',
   },
 };
 

@@ -14,11 +14,11 @@ const TARGET_TIMEZONE = 'Asia/Ho_Chi_Minh'; // UTC+7
  * @param {string} dateStr - ISO 8601 date string (e.g., "2026-02-10T08:30:00-05:00")
  * @returns {string} Formatted date string like "10/02/2026 20:30"
  */
-function formatDateTime(dateStr) {
+function formatDateTime(dateStr, timezone = TARGET_TIMEZONE) {
     const date = new Date(dateStr);
 
     const formatter = new Intl.DateTimeFormat('en-GB', {
-        timeZone: TARGET_TIMEZONE,
+        timeZone: timezone,
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -36,11 +36,11 @@ function formatDateTime(dateStr) {
  * @param {string} dateStr - ISO 8601 date string
  * @returns {string} Date string like "2026-02-10"
  */
-function getDateKey(dateStr) {
+function getDateKey(dateStr, timezone = TARGET_TIMEZONE) {
     const date = new Date(dateStr);
 
     const formatter = new Intl.DateTimeFormat('en-CA', {
-        timeZone: TARGET_TIMEZONE,
+        timeZone: timezone,
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -55,8 +55,8 @@ function getDateKey(dateStr) {
  * @param {Date} referenceDate - Reference instant
  * @returns {{ start: string, end: string }} Date keys in YYYY-MM-DD format
  */
-function getWeekRange(referenceDate = new Date()) {
-    const dateKey = getDateKey(referenceDate.toISOString());
+function getWeekRange(referenceDate = new Date(), timezone = TARGET_TIMEZONE) {
+    const dateKey = getDateKey(referenceDate.toISOString(), timezone);
     const [year, month, day] = dateKey.split('-').map(Number);
     const localDate = new Date(Date.UTC(year, month - 1, day));
     const dayOfWeek = localDate.getUTCDay();
